@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://freellmagents.com/sitemap.xml

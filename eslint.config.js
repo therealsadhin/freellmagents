@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'convex/_generated']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -17,6 +17,14 @@ export default defineConfig([
     ],
     languageOptions: {
       globals: globals.browser,
+    },
+  },
+  {
+    files: ['convex/**/*.{ts,tsx}'],
+    // Backend code is fully typed by Convex's generated data model after
+    // `npx convex dev`; the any-typed placeholders go away then.
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ])

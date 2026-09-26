@@ -978,3 +978,190 @@ When uncertain:
 - Report the actual result.
 
 The objective is a fast, reliable, visually polished repository discovery product — not a large social platform.
+
+---
+
+## 37. SEO and Indexable Repository Pages
+
+freellmagents.com is intended to receive organic search traffic through useful, individual repository pages.
+
+Every real repository in the directory should have its own unique, indexable page.
+
+The repository detail page must NOT be implemented merely as a modal, client-side overlay, or JavaScript-only state.
+
+Each repository should have a permanent URL.
+
+Preferred URL structure:
+
+```text
+/agents/:owner/:repo
+```
+
+Examples:
+
+- `/agents/crawl4ai/crawl4ai`
+- `/agents/browser-use/browser-use`
+- `/agents/openhands/openhands`
+
+This supersedes the earlier suggested `/repositories/:owner/:repo` route in section 20.
+
+If the repository URL structure is changed later, preserve the same principle: every repository must have a stable, unique URL.
+
+### SEO principles
+
+The goal is not to generate pages merely to increase the number of indexed URLs.
+
+Every repository page must contain genuinely useful repository-specific information derived from the underlying GitHub data.
+
+Do not create thin pages with only:
+
+- repository name
+- star count
+- GitHub link
+
+A repository detail page should provide meaningful information such as:
+
+- repository name
+- owner
+- what the project does
+- concise overview
+- features
+- categories
+- supported technologies/languages
+- licence information
+- stars
+- forks
+- repository activity
+- creation/update information
+- relevant topics
+- original GitHub repository link
+
+Do not invent information.
+
+Descriptions and features must be grounded in available GitHub repository data.
+
+### Unique page metadata
+
+Every repository page must have repository-specific metadata.
+
+The page title should be unique and descriptive.
+
+Example:
+
+```text
+Crawl4AI — Open-Source AI Web Crawler | FreeLLMAgents
+```
+
+Do not use the same generic title for every repository.
+
+Meta descriptions should also be generated from the actual repository information.
+
+Do not create thousands of identical meta descriptions with only the repository name changed.
+
+### Canonical URL
+
+Every repository detail page must have its own canonical URL.
+
+Example:
+
+```text
+https://freellmagents.com/agents/crawl4ai/crawl4ai
+```
+
+The canonical URL must correspond to the actual repository page.
+
+Do not canonicalise every repository page to `/` or `/agents`.
+
+Avoid duplicate URLs for the same repository where possible.
+
+If multiple URL formats can reach the same repository, choose one canonical format and redirect or otherwise consistently resolve the alternatives.
+
+### Indexability
+
+Repository detail pages are intended to be indexable by search engines when they contain valid repository data.
+
+Do not accidentally add:
+
+```text
+noindex
+nofollow
+```
+
+or equivalent robots directives to repository detail pages.
+
+Keep the site's `robots.txt` and meta robots configuration consistent with the goal of indexing genuine repository pages.
+
+Provide a sitemap (or equivalent discovery mechanism) that includes the permanent URLs of repository detail pages, and keep it updated as repositories are added by the synchronisation process.
+
+Because the frontend is a client-side Vite + React application, ensure repository pages are actually crawlable: use real URL routes with proper `<title>`, meta description, and canonical tags updated per repository, rather than a single static set of tags for the whole site.
+
+---
+
+## 38. Backend Architecture (Implemented)
+
+These decisions were made during the Convex backend implementation and are settled — do not relitigate them:
+
+### Data flow
+
+```text
+GitHub REST API → Convex actions (server-side) → Convex database → React frontend
+```
+
+The browser never calls GitHub for repository data.
+
+### Convex schema (`convex/schema.ts`)
+
+- `repositories` — one normalised record per GitHub repository, keyed by `githubId` (unique identity). Stores all fields from section 12 plus `searchText` (concatenated name/owner/description/topics/language/summary), `primaryCategory` (first classified category), `lastReadmeFetchedAt`, and `isArchived`.
+- Indexes: `by_github_id`, `by_full_name`, `by_stars`, `by_forks`, `by_pushed_at`, `by_first_seen_at`, `by_trend_score`, `by_primary_category`, `by_language`, plus the `search_repo` full-text search index.
+- `categoryCounts` / `languageCounts` — maintained counters updated incrementally by the upsert mutation so the sidebar never scans the repository table.
+- `syncRuns` — one row per sync run: startedAt, completedAt, status, trigger, discovered/created/updated/skipped/error counts, errorMessage, rateLimited.
+
+### Frontend → Convex
+
+- `main.tsx` wraps the app in `ConvexProvider` (`convex/react`) + `BrowserRouter`. `VITE_CONVEX_URL` is required; the app fails fast with a clear message when it is missing.
+- Routes: `/` (HomePage) and `/agents/:owner/:repo` (RepositoryDetailPage, per section 37).
+- Queries (`convex/repos.ts`): `list` (search/category/language/sort/pagination — text search via `searchIndex`, ordered browsing via per-field indexes), `getByOwnerName`, `categoryCounts`, `languages`, `latestSync`, `totalCount`.
+- All mock repository data was removed. The UI renders skeleton cards while Convex data loads and an empty state when nothing matches.
+- Tabs: All/Popular → stars, New → `firstSeenAt`, Trending → `trendScore`. Sidebar sort maps: Recently Updated → `pushedAt`.
+
+### GitHub sync (`convex/sync.ts`, `convex/github.ts`, `convex/discovery.ts`)
+
+- Discovery: 19 fixed search seed queries derived from section 7's discovery groups, one page (30 repos, sorted by stars) per query per run. One failed query does not abort the run.
+- GitHub access uses `fetch` against the REST API in `convex/github.ts` (server-side only). `GITHUB_TOKEN` is read from Convex env via `process.env.GITHUB_TOKEN` (set with `npx convex env set GITHUB_TOKEN ...`). Without a token the unauthenticated limits (60 req/h core) apply and README fetches are throttled.
+- Rate limiting: on 403/429 with `x-ratelimit-remaining: 0` the run stops, records `rateLimited`, and waits for the next scheduled run. No retry loops.
+- Classification (`convex/classification.ts`): evidence-based keyword/topic rules per category with negative terms (games, bots, crypto, malware). A repo needs genuine agent signals, not just "AI". Repos may belong to multiple categories; the first becomes `primaryCategory`. `isOpenSource`/`isFree` come from the license SPDX (whitelist of OSI licenses); unknown license ⇒ no open-source claim.
+- README: fetched only when missing or older than 7 days (`lastReadmeFetchedAt`). `convex/summarize.ts` deterministically extracts an overview paragraph and up to 6 bullet features. Failure leaves the record with metadata only.
+- Trend score (deterministic, documented): `trendScore = (stars + 2 * forks) / (1 + days since last push)`, computed from stored GitHub data.
+- Upserts are idempotent by `githubId` — running sync twice updates, never duplicates. Category/language counter tables are adjusted incrementally on changes.
+
+### Scheduling (`convex/crons.ts`)
+
+Hourly sync via Convex cron at minute 7 past the hour (UTC), trigger "cron". Initial sync: `npx convex run sync:triggerSync` (internal action, trigger "manual" — internal so anonymous visitors cannot burn GitHub API quota). The dev-only "Run sync now" button was removed for the same reason.
+
+### Environment variables
+
+- `VITE_CONVEX_URL` — client-safe Convex deployment URL (set in `.env.local`; `npx convex dev` writes it).
+- `GITHUB_TOKEN` — server-side only, stored in Convex env, never in `VITE_*` vars or client code. `.env.example` documents both.
+
+### Convex type generation
+
+`convex/_generated/` files are generated by Convex and are real codegen now (the placeholder stubs were removed). Do not hand-edit them. `tsc -b` type-checks the Convex files transitively through src imports; `tsconfig.app.json` includes the `node` type package because Convex server code reads `process.env`.
+
+### Sitemap
+
+`npm run build` runs `scripts/generate-sitemap.mjs` after the Vite build: it queries `repos:sitemapRepos` over the Convex HTTP API using `VITE_CONVEX_URL` and writes `dist/sitemap.xml` alongside `public/robots.txt` for indexing (best-effort — skipped with a warning when the deployment is unreachable).
+
+### Known limitation
+
+Until `npx convex dev` is run (interactive Convex login required), the site renders an error-boundary state explaining that the backend isn't connected.
+
+### SEO implementation
+
+- `src/hooks/useSeo.ts` is the single SEO hook: sets title, meta description, canonical (`https://freellmagents.com` origin hard-coded), Open Graph, Twitter card (`summary_large_image`, default image `/og-image.png`), `robots` (noindex support), and JSON-LD. Cleanup restores site defaults and removes the page canonical.
+- Homepage: `WebSite` JSON-LD with a working `SearchAction` — HomePage reads `?q=` on mount to pre-fill search.
+- Repository pages: `SoftwareSourceCode` + `BreadcrumbList` JSON-LD generated only from stored repository data (no invented fields); title is `<name> — <primary category label> | FreeLLMAgents`; not-found repos render a 404 page with `noindex, follow`, h1 "Repository not found", and are never in the sitemap.
+- `public/og-image.png` (1200×630) is the default social image.
+- Search/filter state is React-only (no URL params), so no duplicate indexable URLs exist; canonical is always the clean path.
+- `scripts/generate-sitemap.mjs` XML-escapes and dedupes paths; still fails gracefully when Convex is unreachable.
+- Fonts load non-render-blocking (`media="print"` + `onload` swap with `<noscript>` fallback).
+- Known limitation: SPA — crawlers that execute JS see per-page metadata; non-JS crawlers see the static index.html defaults. Prerendering would be the next step if raw-HTML crawlability becomes necessary.
