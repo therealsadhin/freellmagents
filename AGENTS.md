@@ -1165,3 +1165,11 @@ Until `npx convex dev` is run (interactive Convex login required), the site rend
 - `scripts/generate-sitemap.mjs` XML-escapes and dedupes paths; still fails gracefully when Convex is unreachable.
 - Fonts load non-render-blocking (`media="print"` + `onload` swap with `<noscript>` fallback).
 - Known limitation: SPA — crawlers that execute JS see per-page metadata; non-JS crawlers see the static index.html defaults. Prerendering would be the next step if raw-HTML crawlability becomes necessary.
+
+### SEO hardening (2026-09 audit — see SEO-AUDIT.md)
+
+- `worker.ts` (Cloudflare Worker, `wrangler.jsonc` `main`) fronts the static assets. It serves the SPA shell only for real routes (`/`, `/agents/:owner/:repo`) and returns genuine 404 HTML (with `noindex`) for every other unknown path, fixing the sitewide soft-404 problem. It also sets `X-Content-Type-Options`, `Referrer-Policy` and `Strict-Transport-Security` headers. Assets config uses `not_found_handling: "none"`.
+- `scripts/generate-sitemap.mjs` also writes `dist/llms.txt` (llmstxt.org convention) from `repos:sitemapRepos` data — grounded in stored name/owner/description/stars only. `repos:sitemapRepos` now returns `{path, name, owner, description, stars}` entries.
+- `convex/repos.ts` `related` query powers a "Related repositories" section on detail pages (same primary category, most-starred first) so repository pages are internally linked, not sitemap-only.
+- `convex/github.ts` decodes base64 README content through `TextDecoder` (UTF-8) — `atob()` alone produced mojibake.
+- Remaining external work: Cloudflare zone settings — enable "Always Use HTTPS" and make `www` 301 to the apex (`www.freellmagents.com` currently returns 520).

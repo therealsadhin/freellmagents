@@ -880,6 +880,18 @@ a {
   font-size: 14px;
 }
 
+.detail__related {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.detail__related a {
+  color: var(--text-primary);
+}
+
 .detail__sidebar section {
   background: var(--card);
   border: 1px solid var(--border);

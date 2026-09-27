@@ -2,8 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "freellmagents",
   "compatibility_date": "2026-09-25",
+  // worker.ts serves the SPA shell only for real routes and returns genuine
+  // 404s for unknown paths (soft-404 fix, see SEO-AUDIT.md).
+  "main": "worker.ts",
   "assets": {
     "directory": "dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "none"
   }
 }

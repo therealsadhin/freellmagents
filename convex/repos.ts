@@ -215,9 +215,57 @@ export const sitemapRepos = query({
         numItems: args.numItems ?? 1000,
       })
     return {
-      paths: page.page.map((r: any) => `agents/${r.owner}/${r.name}`),
+      entries: page.page.map((r: any) => ({
+        path: `agents/${r.owner}/${r.name}`,
+        name: r.name as string,
+        owner: r.owner as string,
+        description: (r.description ?? r.readmeSummary ?? '') as string,
+        stars: r.stars as number,
+      })),
       cursor: page.continueCursor,
       isDone: page.isDone,
     }
+  },
+})
+
+/** Minimal repository projection for internal links (related repos, llms.txt). */
+export type RelatedRepo = Pick<
+  RepoDoc,
+  'owner' | 'name' | 'description' | 'stars' | 'primaryCategory' | 'primaryLanguage'
+>
+
+/**
+ * Related repositories: same primary category, most-starred first. Powers the
+ * "Related repositories" section on detail pages so repository pages are not
+ * reachable only through the paginated homepage (SEO-AUDIT.md issue 5).
+ */
+export const related = query({
+  args: {
+    primaryCategory: v.string(),
+    excludeId: v.optional(v.id('repositories')),
+    numItems: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query('repositories')
+      .withIndex('by_primary_category', (q: any) =>
+        q.eq('primaryCategory', args.primaryCategory),
+      )
+      .collect()
+    return rows
+      .filter(
+        (r: any) =>
+          r.isRelevant && !r.isArchived && r._id !== args.excludeId,
+      )
+      .sort((a: any, b: any) => b.stars - a.stars)
+      .slice(0, args.numItems ?? 6)
+      .map((r: any) => ({
+        owner: r.owner,
+        name: r.name,
+        description: r.description,
+        stars: r.stars,
+        primaryCategory: r.primaryCategory,
+        primaryLanguage: r.primaryLanguage,
+      }))
   },
 })

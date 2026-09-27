@@ -95,6 +95,9 @@ export function useSeo(options: {
     upsertMeta('property', 'og:type', canonicalPath ? 'article' : 'website')
     upsertMeta('property', 'og:site_name', SITE_NAME)
     upsertMeta('property', 'og:image', imageUrl)
+    // All images used by the site are the 1200×630 default OG asset.
+    upsertMeta('property', 'og:image:width', '1200')
+    upsertMeta('property', 'og:image:height', '630')
 
     upsertMeta('name', 'twitter:card', 'summary_large_image')
     upsertMeta('name', 'twitter:title', title)

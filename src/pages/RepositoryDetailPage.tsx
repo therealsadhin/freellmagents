@@ -22,6 +22,12 @@ export function RepositoryDetailPage() {
     owner,
     name: repoName,
   })
+  // Related repositories give detail pages real internal links (SEO-AUDIT.md
+  // issue 5). Skipped until the current repo is loaded.
+  const related = useQuery(
+    api.repos.related,
+    repo ? { primaryCategory: repo.primaryCategory, excludeId: repo._id } : 'skip',
+  )
 
   const canonicalPath = `/agents/${owner}/${repoName}`
   const notFound = repo === null
@@ -183,6 +189,29 @@ export function RepositoryDetailPage() {
                     <p className="detail__muted">No topics specified.</p>
                   )}
                 </section>
+
+                {related && related.length > 0 && (
+                  <section>
+                    <h2>Related repositories</h2>
+                    <ul className="detail__related">
+                      {related.map((relatedRepo) => (
+                        <li key={`${relatedRepo.owner}/${relatedRepo.name}`}>
+                          <Link
+                            to={`/agents/${relatedRepo.owner}/${relatedRepo.name}`}
+                          >
+                            {relatedRepo.owner}/{relatedRepo.name}
+                          </Link>
+                          {relatedRepo.description && (
+                            <span className="detail__muted">
+                              {' '}
+                              — {relatedRepo.description}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
               </div>
 
               <aside className="detail__sidebar">

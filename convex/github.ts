@@ -97,7 +97,13 @@ export async function getReadme(
   )
   if (!result || result.encoding !== 'base64') return null
   try {
-    const decoded = atob(result.content.replace(/\n/g, ''))
+    // atob() yields a Latin-1 string; READMEs are UTF-8, so decode through
+    // bytes to avoid mojibake (curly quotes, em dashes, non-Latin text).
+    const bytes = Uint8Array.from(
+      atob(result.content.replace(/\n/g, '')),
+      (char) => char.charCodeAt(0),
+    )
+    const decoded = new TextDecoder().decode(bytes)
     // ~8KB is plenty for summarisation; keeps memory bounded.
     return decoded.slice(0, 8192)
   } catch {
