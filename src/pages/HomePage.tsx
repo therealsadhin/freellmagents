@@ -171,11 +171,18 @@ export function HomePage() {
           )}
 
           {repositoriesResult === undefined ? (
-            <div className="repo-grid" aria-label="Repositories loading">
-              {Array.from({ length: 9 }).map((_, index) => (
-                <div key={index} className="repo-card repo-card--skeleton" />
-              ))}
-            </div>
+            <>
+              {/* aria-label is not permitted on a generic div; the loading
+                  status lives in the visually-hidden live region instead. */}
+              <div className="sr-only" role="status">
+                Loading repositories
+              </div>
+              <div className="repo-grid" aria-hidden>
+                {Array.from({ length: 9 }).map((_, index) => (
+                  <div key={index} className="repo-card repo-card--skeleton" />
+                ))}
+              </div>
+            </>
           ) : isEmpty ? (
             <div className="empty">
               <h3>No repositories found</h3>
