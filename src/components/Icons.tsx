@@ -276,3 +276,12 @@ export function PlugIcon({ size }: IconProps) {
     </svg>
   )
 }
+
+export function SparklesIcon({ size }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <path d="M12 4.5c.5 3.4 2.8 5.7 6.2 6.2-3.4.5-5.7 2.8-6.2 6.2-.5-3.4-2.8-5.7-6.2-6.2 3.4-.5 5.7-2.8 6.2-6.2Z" />
+      <path d="M19 3v3m1.5-1.5h-3M5.5 17.5v3M7 19H4" />
+    </svg>
+  )
+}

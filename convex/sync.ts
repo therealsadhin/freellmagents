@@ -416,3 +416,74 @@ export const triggerSync = internalAction({
     await ctx.runAction(internal.sync.runSync, { trigger: 'manual' })
   },
 })
+
+/**
+ * One-off backfill: re-run classification over every stored repository and
+ * patch categories/primaryCategory plus the maintained counters. Used when
+ * CATEGORY_RULES gain new categories (e.g. skills, ai-models). Does not touch
+ * GitHub; pure database reclassification.
+ */
+export const reclassifyAll = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query('repositories').collect()
+    let updated = 0
+    for (const row of rows) {
+      const classification = classify({
+        name: row.name,
+        description: row.description,
+        topics: row.topics,
+      } as GitHubRepo)
+      const categories = classification.isRelevant
+        ? [...new Set([...row.categories, ...classification.categories])]
+        : row.categories
+      if (JSON.stringify(categories) !== JSON.stringify(row.categories)) {
+        ctx.db.patch(row._id, {
+          categories,
+          primaryCategory: categories[0] ?? row.primaryCategory,
+        })
+        adjustCategoryCounts(ctx, row, categories)
+        updated += 1
+      }
+    }
+    return { total: rows.length, updated }
+  },
+})
+
+/**
+ * One-off maintenance: rebuild categoryCounts and languageCounts from the
+ * actual repository rows, in case the incrementally-maintained counters
+ * drifted (e.g. across backfills).
+ */
+export const rebuildCounters = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query('repositories').collect()
+    for (const row of await ctx.db.query('categoryCounts').collect()) {
+      ctx.db.delete(row._id)
+    }
+    for (const row of await ctx.db.query('languageCounts').collect()) {
+      ctx.db.delete(row._id)
+    }
+    const categoryCounts = new Map<string, number>()
+    const languageCounts = new Map<string, number>()
+    for (const row of rows) {
+      for (const id of row.categories) {
+        categoryCounts.set(id, (categoryCounts.get(id) ?? 0) + 1)
+      }
+      if (row.primaryLanguage) {
+        languageCounts.set(
+          row.primaryLanguage,
+          (languageCounts.get(row.primaryLanguage) ?? 0) + 1,
+        )
+      }
+    }
+    for (const [categoryId, count] of categoryCounts) {
+      await ctx.db.insert('categoryCounts', { categoryId, count })
+    }
+    for (const [language, count] of languageCounts) {
+      await ctx.db.insert('languageCounts', { language, count })
+    }
+    return { repos: rows.length, categories: categoryCounts.size }
+  },
+})

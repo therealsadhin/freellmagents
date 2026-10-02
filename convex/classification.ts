@@ -14,6 +14,8 @@ export const CATEGORY_IDS = [
   'agent-frameworks',
   'agent-tools',
   'mcp-tooling',
+  'skills',
+  'ai-models',
 ] as const
 
 export type CategoryId = (typeof CATEGORY_IDS)[number]
@@ -139,6 +141,50 @@ const CATEGORY_RULES: CategoryRule[] = [
     ],
   },
   {
+    id: 'skills',
+    keywords: [
+      'agent skills',
+      'agent skill',
+      'claude skills',
+      'claude skill',
+      'skill library',
+      'skills for agents',
+      'skills for ai',
+      'agent abilities',
+      'skills',
+      'skill set',
+    ],
+  },
+  {
+    id: 'ai-models',
+    keywords: [
+      'ai model',
+      'ai models',
+      'llm model',
+      'language model',
+      'foundation model',
+      'open weights',
+      'open-source model',
+      'model zoo',
+      'inference engine',
+      'large language model',
+      'vllm',
+      'ollama',
+      'llama.cpp',
+      'gguf',
+      'fine-tuning',
+      'fine tuning',
+      'quantization',
+      'quantization',
+      'embedding model',
+      'speech model',
+      'diffusion model',
+      'inference framework',
+      'local llm',
+      'run llm',
+    ],
+  },
+  {
     id: 'ai-llm-agents',
     keywords: [
       'llm agent',
@@ -170,6 +216,9 @@ const STRONG_AGENT_TERMS = [
   'model context protocol',
   'tool calling',
   'function calling',
+  'agent skills',
+  'language model',
+  'open weights',
 ]
 
 const NEGATIVE_TERMS = [

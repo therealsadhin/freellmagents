@@ -1,29 +1,14 @@
-import { LogoMark, SearchIcon, MenuIcon } from './Icons'
+import { LogoMark, SearchIcon } from './Icons'
 
 interface TopBarProps {
   search: string
   onSearchChange: (value: string) => void
-  onToggleSidebar: () => void
   searchRef: React.RefObject<HTMLInputElement | null>
 }
 
-export function TopBar({
-  search,
-  onSearchChange,
-  onToggleSidebar,
-  searchRef,
-}: TopBarProps) {
+export function TopBar({ search, onSearchChange, searchRef }: TopBarProps) {
   return (
     <header className="topbar">
-      <button
-        type="button"
-        className="icon-button topbar__menu"
-        aria-label="Open navigation menu"
-        onClick={onToggleSidebar}
-      >
-        <MenuIcon size={20} />
-      </button>
-
       <a className="topbar__brand" href="/" aria-label="freellmagents.com home">
         <LogoMark />
         <span>freellmagents.com</span>

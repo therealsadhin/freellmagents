@@ -11,6 +11,8 @@ import {
   FrameIcon,
   WrenchIcon,
   PlugIcon,
+  SparklesIcon,
+  CubeIcon,
   ClockIcon,
   ForkIcon,
   TrendIcon,
@@ -28,6 +30,8 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'agent-frameworks': <FrameIcon />,
   'agent-tools': <WrenchIcon />,
   'mcp-tooling': <PlugIcon />,
+  skills: <SparklesIcon />,
+  'ai-models': <CubeIcon />,
 }
 
 const sortIcons: Record<string, React.ReactNode> = {
@@ -36,7 +40,7 @@ const sortIcons: Record<string, React.ReactNode> = {
   trending: <TrendIcon />,
 }
 
-interface SidebarProps {
+interface FilterPanelProps {
   activeCategory: string
   onCategoryChange: (id: string) => void
   activeSort: string
@@ -46,10 +50,9 @@ interface SidebarProps {
   languages: string[]
   counts: Record<string, number>
   totalCount: number
-  open: boolean
 }
 
-export function Sidebar({
+export function FilterPanel({
   activeCategory,
   onCategoryChange,
   activeSort,
@@ -59,13 +62,13 @@ export function Sidebar({
   languages,
   counts,
   totalCount,
-  open,
-}: SidebarProps) {
+}: FilterPanelProps) {
   const languageOptions = ['All Languages', ...languages]
 
   return (
-    <nav className="sidebar" data-open={open} aria-label="Browse categories">
-      <div className="sidebar__group">
+    <nav className="filter-panel" aria-label="Browse categories">
+      <div className="filter-panel__group">
+        <h2 className="sidebar__heading">Categories</h2>
         <ul className="category-list">
           {categories.map((category) => (
             <li key={category.id}>
@@ -90,7 +93,7 @@ export function Sidebar({
         </ul>
       </div>
 
-      <div className="sidebar__group">
+      <div className="filter-panel__group">
         <h2 className="sidebar__heading">Sort by</h2>
         <ul className="sort-list">
           {(
@@ -119,7 +122,7 @@ export function Sidebar({
         </ul>
       </div>
 
-      <div className="sidebar__group">
+      <div className="filter-panel__group">
         <h2 className="sidebar__heading" id="language-heading">
           Language
         </h2>

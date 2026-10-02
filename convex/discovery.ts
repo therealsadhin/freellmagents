@@ -22,6 +22,11 @@ export const DISCOVERY_QUERIES: Array<{ query: string; category: CategoryHint }>
     { query: 'agent evaluation stars:>20', category: 'agent-tools' },
     { query: 'mcp server stars:>50', category: 'mcp-tooling' },
     { query: 'model context protocol stars:>20', category: 'mcp-tooling' },
+    { query: 'agent skills stars:>10', category: 'skills' },
+    { query: 'claude skills stars:>10', category: 'skills' },
+    { query: 'local llm inference stars:>50', category: 'ai-models' },
+    { query: 'open weights language model stars:>50', category: 'ai-models' },
+    { query: 'fine-tuning llm stars:>50', category: 'ai-models' },
   ]
 
 export type CategoryHint =
@@ -34,3 +39,5 @@ export type CategoryHint =
   | 'agent-frameworks'
   | 'agent-tools'
   | 'mcp-tooling'
+  | 'skills'
+  | 'ai-models'

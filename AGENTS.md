@@ -1173,3 +1173,35 @@ Until `npx convex dev` is run (interactive Convex login required), the site rend
 - `convex/repos.ts` `related` query powers a "Related repositories" section on detail pages (same primary category, most-starred first) so repository pages are internally linked, not sitemap-only.
 - `convex/github.ts` decodes base64 README content through `TextDecoder` (UTF-8) — `atob()` alone produced mojibake.
 - Remaining external work: Cloudflare zone settings — enable "Always Use HTTPS" and make `www` 301 to the apex (`www.freellmagents.com` currently returns 520).
+
+---
+
+## 39. Design-Only Change Policy (CURRENT ACTIVE RULE — HIGHEST PRIORITY)
+
+**Effective now, the only permitted work on this project is visual/design changes.**
+
+No matter what happens, do NOT change anything except the design. Concretely:
+
+### Allowed
+- Visual styling only: colors, typography, spacing, layout composition, borders, shadows, rounded corners, animations/transitions, icons, imagery.
+- Restructuring JSX purely to achieve a new visual design, as long as rendered behaviour stays identical.
+
+### Forbidden — never touch, even if a design change seems to require it
+- Functionality: search, filtering, sorting, category navigation, pagination, tabs, routes, links, external GitHub links.
+- Convex backend: schema, queries, mutations, actions, sync, classification, summarization, crons, trend score.
+- Data model, data flow, or any stored/computed data.
+- Routing and URL structure.
+- SEO behaviour: titles, meta tags, canonicals, JSON-LD, sitemap, llms.txt, robots, Worker 404/header logic (`worker.ts`, `wrangler.jsonc`).
+- Accessibility behaviour: semantic structure, keyboard navigation, ARIA, focus states must keep working — a design change must not degrade them.
+- Dependencies (`package.json`), build scripts, config files (`vite.config.ts`, `tsconfig*.json`, `eslint.config.js`).
+- Performance characteristics, loading behaviour, or state management logic.
+- Copy/content that carries information (descriptions, labels' meanings, metadata wording) — only its presentation.
+
+### If a design change appears to require a functional change
+Stop. Do not make the functional change. Rework the design so it fits the existing behaviour, or surface the conflict to the user and wait for an explicit decision. When in doubt, ship the smaller visual-only change.
+
+### Verification for design changes
+- `npm run lint`, `npm run build`, and `npx tsc --noEmit` must pass.
+- Manually confirm all existing behaviour is unchanged: homepage, search, filters, sorting, categories, detail pages, external links, loading/empty/error states, responsive layout.
+
+This section overrides any earlier reading of sections 18 or elsewhere that might suggest broader changes. All previously settled product decisions (section 35) remain in force and are not up for reconsideration.

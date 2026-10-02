@@ -85,14 +85,16 @@ export const list = query({
     }
 
     // Ordered index path.
+    // Category filter matches the full categories array (repos can belong to
+    // several categories), not just primaryCategory. Bounded collect keeps
+    // this server-side and cheap at the current directory size.
     if (args.category && args.category !== 'all') {
-      const rows = await ctx.db
-        .query('repositories')
-        .withIndex('by_primary_category', (q: any) =>
-          q.eq('primaryCategory', args.category!),
-        )
-        .order('desc')
-        .take(args.numItems * 3) // overfetch then post-filter by language
+      const rows = (
+        await ctx.db
+          .query('repositories')
+          .filter((q: any) => q.eq(q.field('isRelevant'), true))
+          .collect()
+      ).filter((r: any) => r.categories.includes(args.category!))
       const items = filterByLanguage(rows, args.language).slice(
         0,
         args.numItems,

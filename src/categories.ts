@@ -15,6 +15,8 @@ export const categories: Category[] = [
   { id: 'agent-frameworks', label: 'Agent Frameworks' },
   { id: 'agent-tools', label: 'Agent Tools' },
   { id: 'mcp-tooling', label: 'MCP / Tooling' },
+  { id: 'skills', label: 'Skills' },
+  { id: 'ai-models', label: 'AI Models' },
 ]
 
 export const tabs = ['All', 'Popular', 'New', 'Trending'] as const

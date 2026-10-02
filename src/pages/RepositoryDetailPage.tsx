@@ -103,7 +103,6 @@ export function RepositoryDetailPage() {
       <TopBar
         search=""
         onSearchChange={() => {}}
-        onToggleSidebar={() => {}}
         searchRef={{ current: null }}
       />
 
@@ -124,6 +123,9 @@ export function RepositoryDetailPage() {
           </div>
         ) : (
           <>
+            <Link className="detail__back-button" to="/">
+              &larr; Back to repositories
+            </Link>
             <nav className="detail__breadcrumb" aria-label="Breadcrumb">
               <Link to="/">Repositories</Link>
               <span aria-hidden> / </span>
